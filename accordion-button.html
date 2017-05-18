@@ -1,0 +1,189 @@
+<link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="/bower_components/ac-view-behaviors/ac-button-behavior.html">
+<!--
+
+Shows drop down menu (works on chrome)
+
+### Usage
+The list displayed in the drop down menu can be set as an attribute.
+
+    <drop-menu list-items='["first" ,"second"]'></drop-menu>
+
+For an overlayed drop menu:
+
+    <drop-menu overlay-menu list-items='["first" ,"second"]'></drop-menu>
+
+### Styling
+ Custom property | Description | Default
+----------------|-------------|----------
+`--item-background-color` | List item backround color | `#f1ecef`
+`--item-color` | List item color used for fonts | `#302f31`
+`--button-close-color` | Icon button hover color | `4775D1`
+`--button-background-color` | Drop menu's background color | `white`
+`--button-close-color` | Icon button hover color | `4775D1`
+`--icon-button` | Mixin applied the icon button | `{}`
+
+@demo demo/drop-menu-demo.html
+-->
+<dom-module id="accordion-button">
+    <template>
+        <style>
+            :host {}
+            .bass_chord {
+                margin-top: -0.6vh;
+                height: 5.4vh;
+                width: 5.4vh;
+                visibility: hidden;
+            }
+            [text] {
+                height: 100%;
+                width: 100%;
+                color: var(--content-background,#fafafa);
+                font-weight: bold;
+                @apply(--layout-horizontal);
+                @apply(--layout-center-justified);
+                @apply(--layout-center);
+                @apply(--layout-vertical);
+            }
+            .bass_note {
+                margin-top: -0.6vh;
+                height: 5.4vh;
+                width: 5.4vh;
+                visibility: hidden;
+            }
+            .treble {
+                margin-top: -0.6vh;
+                height: 6.8vh;
+                width: 6.8vh;
+                visibility: hidden;
+            }
+            [circle] {
+                position:absolute;
+                background-color: var(--content-background,#fafafa);
+                border-radius: 100%;
+            }
+            [circle]:hover {
+                cursor: pointer;
+            }
+            [shadow] {
+                @apply(--layout-center-justified);
+                @apply(--layout-vertical);
+                @apply(--layout-center);
+                background-color: var(--button-shadow,#bdbdbd);
+                border-radius: 100%;
+            }
+            .treble[shadow] {
+                height: 7.1vh;
+                width: 7.1vh;
+                visibility: visible;
+            }
+            .bass_chord[shadow],
+            .bass_note[shadow] {
+                height: 5.8vh;
+                width: 5.8vh;
+                visibility: visible;
+            }
+            .closing{
+                background-color: var(--theme-color1,#4775D1) ;
+            }
+            .opening{
+                background-color: var(--theme-color2,#CC6666) ;
+            }
+            .hidden{
+                visibility: hidden ;
+            }
+            .visible{
+                visibility: visible ;
+            }
+            [actionCircle]{
+                will-change:transform ;
+            }
+        </style>
+        <!-- local DOM -->
+        <div shadow class$="[[buttonType]]">
+            <div circle class$="[[buttonType]]" style="visibility:visible;"></div>
+            <div circle actionCircle class$='[[buttonType]] [[_computeColor(instrumentState,0)]] [[_computeVisibility(instrumentState,0)]]' style$='opacity:[[instrumentOpacity]]'>
+                <template is="dom-if" if="[[showingInstrumentNotes]]">
+                    <div text>
+                        [[instrumentNote]]
+                    </div>
+                </template>
+            </div>
+            <div circle actionCircle class$="[[buttonType]] [[_computeColor(playbackState,1)]] [[_computeVisibility(playbackState,1)]]" style$='opacity:[[playbackOpacity]]'>
+                <template is="dom-if" if="[[showingPlaybackNotes]]">
+                    <div text>
+                        [[playBackNote]]
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is: "accordion-button",
+            observers: [],
+            behaviors: [ACButtonBehavior],
+            listeners: {},
+            properties: {
+                instrumentNote: {
+                    type: String,
+                    value: ""
+                },
+                playBackNote: {
+                    type: String,
+                    value: ""
+                },
+                closeNoteIndex:{
+                    type:Number,
+                    observer:'_computeCloseNote'
+                },
+                openNoteIndex:{
+                    type:Number,
+                    observer:'_computeOpenNote'
+                },
+                openNote:{
+                    type:String
+                },
+                closeNote:{
+                    type:String
+                },
+                buttonType: {
+                    type: String
+                },
+            },
+            _computeCloseNote: function(){
+                this.closeNote= this._noteNumberToName(this.closeNoteIndex);
+            },
+            _computeOpenNote: function(){
+                this.openNote= this._noteNumberToName(this.openNoteIndex);
+            },
+            _noteNumberToName: function (note) {
+                if (this.buttonType === 'bass_chord')
+                    return "";
+                return this._getNoteName(note);
+            },
+            _computeColor: function (state, which) {
+                if (state === 1) {
+                    if (which === 0)
+                        this.instrumentNote =  this.closeNote ;
+                    else {
+                        this.playBackNote = this.closeNote ;
+                    }
+                    return 'closing';
+                } else {
+                    if (which === 0)
+                        this.instrumentNote = this.openNote ;
+                    else {
+                        this.playBackNote = this.openNote ;
+                    }
+                    return 'opening';
+                }
+            },
+            _computeVisibility: function (state) {
+                if (state === 0)
+                    return 'hidden';
+                return 'visible';
+            }
+        });
+    </script>
+</dom-module>

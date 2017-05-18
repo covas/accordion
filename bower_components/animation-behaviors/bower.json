@@ -1,0 +1,29 @@
+{
+  "name": "animation-behaviors",
+  "authors": [
+    "acordeonl <admin@acorde.onl>"
+  ],
+  "description": "",
+  "main":[ "hero-from-behavior.html" , "hero-to-behavior.html","ripple-from-behavior.html" , "ripple-to.html","scale-up-behavior.html" ],
+  "keywords": [
+    "web-components",
+    "polymer"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "neon-animation": "PolymerElements/neon-animation#^1.2.3"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.1.7",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.2.5"
+  }
+}

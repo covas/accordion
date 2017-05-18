@@ -1,0 +1,39 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../neon-animation/neon-animation-runner-behavior.html">
+<link rel="import" href="../neon-animation/neon-animations.html">
+
+
+<script>
+
+/**
+* Behavior that highlights stuff.
+*
+* @polymerBehavior
+*/
+
+    ScaleUpBehaviorImpl={
+        properties:{
+            animationConfig: {
+                value: function() {
+                    return {
+                        'entry': [{
+                            name: 'fade-in-animation',
+                            node: this,
+                            timing: {
+                                duration: 1000
+                            }
+                        }, {
+                            name: 'scale-up-animation',
+                            node: this,
+                            timing: {
+                                duration: 500
+                            }
+                        }]
+                    };
+                }
+            }
+        },
+    };
+
+    ScaleUpBehavior = [Polymer.NeonAnimationRunnerBehavior,ScaleUpBehaviorImpl] ;
+</script>

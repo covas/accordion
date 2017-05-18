@@ -1,0 +1,130 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../neon-animation/neon-shared-element-animation-behavior.html">
+<link rel="import" href="../neon-animation/neon-animation-runner-behavior.html">
+<link rel="import" href="../neon-animation/neon-animations.html">
+
+
+<!--
+
+Shows drop down menu (works on chrome)
+
+### Usage
+The list displayed in the drop down menu can be set as an attribute.
+
+    <drop-menu list-items='["first" ,"second"]'></drop-menu>
+
+For an overlayed drop menu:
+
+    <drop-menu overlay-menu list-items='["first" ,"second"]'></drop-menu>
+
+### Styling
+ Custom property | Description | Default
+----------------|-------------|----------
+`--item-background-color` | List item backround color | `#f1ecef`
+`--item-color` | List item color used for fonts | `#302f31`
+`--close-color` | Icon button hover color | `4775D1`
+`--content-background` | Drop menu's background color | `white`
+`--close-color` | Icon button hover color | `4775D1`
+`--icon-button` | Mixin applied the icon button | `{}`
+
+@demo demo/drop-menu-demo.html
+-->
+<dom-module id="ripple-to">
+    <template>
+        <style>
+            :host{
+                --ripple-color:var(--close-color) ;
+            }
+            #to {
+                top: 0;
+                left: 0;
+                position: absolute;
+                width: 100vw;
+                height: 100vh;
+                opacity: 0;
+                background-color: var(--ripple-color);
+            }
+        </style>
+        <!-- local DOM -->
+        <div id="to">
+        </div>
+        <div home>
+            <content></content>
+        </div>
+
+    </template>
+
+    <script>
+        Polymer({
+            is: "ripple-to",
+            observers: [],
+            behaviors: [Polymer.NeonSharedElementAnimatableBehavior],
+            listeners: {
+            },
+            properties: {
+                ripple: {
+                    notify: true
+                },
+                animationConfig: {
+                    value: function() {
+                        return {
+                            'entry': [{
+                                name: 'ripple-animation',
+                                toPage: this,
+                                id: 'ripple'
+                            }, {
+                                name: 'fade-out-animation',
+                                node: this.$.to,
+                                timing: {
+                                    duration: 400
+                                }
+                            }, {
+                                name: 'fade-in-animation',
+                                node: this.$$('[home]'),
+                                timing: {
+                                    duration: 700
+                                }
+                            }],
+                            'exit': [{
+                                name: 'reverse-ripple-animation',
+                                id: 'ripple',
+                                fromPage: this,
+                                timing: {
+                                    duration: 350
+                                }
+                            }, {
+                                name: 'fade-out-animation',
+                                node: this.$$('[home]'),
+                                timing: {
+                                    duration: 300
+                                }
+                            }, {
+                                name: 'fade-out-animation',
+                                node: this.$.to,
+                                timing: {
+                                    duration: 600
+                                }
+                            }]
+                        };
+                    }
+                },
+                sharedElements: {
+                    value: function() {
+                        return {
+                            'ripple': this.$.to
+                        };
+                    }
+                },
+                color:{
+                    type:String,
+                    value:'#4775D1'
+                }
+            }
+            // ,
+            // attached: function() {
+            //     this.customStyle['--ripple-color'] = this.color ;
+            //     this.updateStyles();
+            // }
+        });
+    </script>
+</dom-module>

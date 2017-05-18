@@ -1,0 +1,70 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../neon-animation/neon-shared-element-animation-behavior.html">
+<link rel="import" href="../neon-animation/neon-animation-runner-behavior.html">
+<link rel="import" href="../neon-animation/neon-animations.html">
+
+<script>
+
+    /**
+    * Behavior that highlights stuff.
+    *
+    * @polymerBehavior
+    */
+
+    HeroFromBehaviorImpl = {
+        properties: {
+            hero: {
+                observer: '_setHeroTo'
+            },
+            animationConfig: {
+                value: function () {
+                    return {
+                        'exit': [
+                            {
+                                name: 'hero-animation',
+                                id: 'hero',
+                                fromPage: this
+                            }, {
+                                name: 'fade-out-animation',
+                                node: this.$.from
+                            }, {
+                                name: 'fade-out-animation',
+                                node: this,
+                                timing: {
+                                    duration: 200
+                                }
+                            }
+                        ],
+                        'entry': [
+                            {
+                                name: 'hero-animation',
+                                id: 'hero',
+                                toPage: this
+                            }, {
+                                name: 'fade-in-animation',
+                                node: this.$.from
+                            }, {
+                                name: 'fade-in-animation',
+                                node: this,
+                                timing: {
+                                    duration: 400
+                                }
+                            }
+                        ]
+                    };
+                }
+            },
+            sharedElements: {
+                value: function () {
+                    return {'hero': this.$.from};
+                }
+            }
+        },
+        _setHeroTo: function (hero) {
+            var selector = "#" + hero;
+            this.sharedElements.hero = this.$$(selector);
+        }
+    };
+    HeroFromBehaviorTmp = [Polymer.NeonSharedElementAnimatableBehavior, HeroFromBehaviorImpl];
+    HeroFromBehavior = [Polymer.NeonAnimationRunnerBehavior, HeroFromBehaviorImpl];
+</script>

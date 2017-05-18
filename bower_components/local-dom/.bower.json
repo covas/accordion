@@ -1,0 +1,39 @@
+{
+  "name": "local-dom",
+  "authors": [
+    "acordeonl <admin@acorde.onl>"
+  ],
+  "description": "",
+  "main": "local-dom.html",
+  "keywords": [
+    "web-components",
+    "polymer"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/acordeonl/local-dom",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "iron-media-query": "PolymerElements/iron-media-query#^1.0.8"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.1.7",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.2.5"
+  },
+  "version": "1.0.2",
+  "_release": "1.0.2",
+  "_resolution": {
+    "type": "version",
+    "tag": "v1.0.2",
+    "commit": "0f1da87b643f8d57ea611fd3b2613e343c2794ce"
+  },
+  "_source": "https://github.com/acordeonl/local-dom.git",
+  "_target": "^1.0.2",
+  "_originalSource": "acordeonl/local-dom"
+}

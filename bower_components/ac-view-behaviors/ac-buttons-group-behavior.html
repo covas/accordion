@@ -1,0 +1,232 @@
+<link rel="import" href="../polymer/polymer.html">
+<script src='./LinkedList.js'></script>
+
+<script>
+/**
+* Behavior that highlights stuff.
+*
+* @polymerBehavior
+*/
+    ACButtonsGroupBehavior= {
+        properties:{
+            name:{
+                type:String
+            },
+            totalViewAudios:{
+                type:Number,
+                value:0
+            },
+            loadedViewAudios:{
+                type:Number,
+                value:0
+            },
+            playbackButtonActions:{
+                type:Object
+            },
+            instrumentButtonActions:{
+                type:Object
+            },
+            finishedLoading:{
+                type:Boolean,
+                value:false
+            },
+            rotation:{
+                type:Boolean,
+                value:false
+            },
+            instrumentPanning:{
+                type:Number,
+                value:0,
+                observer:'_setSynthInstrumentPanning'
+            },
+            playbackPanning:{
+                type:Number,
+                value:0,
+                observer:'_setSynthPlaybackPanning'
+            },
+            instrumentVolume:{
+                type:Number,
+                value:1,
+                observer:'_setSynthInstrumentVolume'
+            },
+            playbackVolume:{
+                type:Number,
+                value:1,
+                observer:'_setSynthPlaybackVolume'
+            }
+        },
+        // -------------- INSTRUMENT LOADING --------------------
+        _onLoadSynthesizer: function(){
+            this.loadedViewAudios ++ ;
+            if(this.loadedViewAudios === this.totalViewAudios) {
+                this.fire('instrument-buttons-loaded-2') ;
+            }
+        },
+        loadInstrumentAudio: function(e){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('VIEW-AUDIO');
+            nodeList[e.detail.synthIndex].resetAudio(e.detail.audioURL) ;
+            this.addPitch(0) ;
+        },
+        registerInstrumentButtons: function(){
+            this.fire('instrument-buttons-loaded',{name:this.name,playbackVolume:this.playbackVolume*100,instrumentVolume:this.instrumentVolume*100,instrumentPanning:this.instrumentPanning*100,playbackPanning:this.playbackPanning*100}) ;
+        },
+        registerViewAudios: function(){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('VIEW-AUDIO');
+            for (var i = 0; i < nodeList.length; i++) {
+                this.fire('register-view-audio',{name:nodeList[i].id,url:nodeList[i].audioUrl,buttonsGroupIndex:this.index,synthIndex:i}) ;
+            }
+        },
+        onFinishedLoadingNotes: function(){
+        },
+        // ----------------  PITCH -------------------------
+        addPitch: function(diff){
+            this.loadedViewAudios = 0  ;
+            this.finishedLoading = false ;
+            this._addPitch(diff) ;
+            var nodeList = Polymer.dom(this.root).querySelectorAll('VIEW-AUDIO');
+            for (var i = 0; i < nodeList.length; i++)
+                nodeList[i].onPitchUpdate()  ;
+            this._loadNotes();
+        },
+        _loadNote: function(synthId,note){
+            this.$$('#'+synthId).loadNote(note);
+        },
+        // -------------------- GUI -------------------------
+        addGUIAction: function(e){
+            if (e.origin === 'playback' || e.origin==='playbackGUI') {
+                if(e.playNow !== undefined) {
+                    e.when = context.currentTime ;
+                }
+                else{
+                    e.when =  context.currentTime+(e.tempo)*(e.time-e.playbackTime)  ;
+                }
+                this.playbackButtonActions.push(e);
+            }
+            if (e.origin === 'instrument') {
+                this.instrumentButtonActions.push(e);
+            }
+        },
+        updateGUI: function(){
+            if(this.playbackButtonActions.length > 0 ) {
+                if(this.playbackButtonActions.first.value.when < context.currentTime ){
+                    this.$$('['+this.playbackButtonActions.first.value.which+']').render(this.playbackButtonActions.first.value.origin,this.playbackButtonActions.first.value.buttonState) ;
+                    this.playbackButtonActions.popFirst() ;
+                }
+            }
+            if(this.instrumentButtonActions.length > 0 ){
+                if(this.instrumentButtonActions.first.value.guiWhen < context.currentTime){
+                    this.$$('['+this.instrumentButtonActions.first.value.which+']').render(this.instrumentButtonActions.first.value.origin,this.instrumentButtonActions.first.value.buttonState) ;
+                    this.instrumentButtonActions.popFirst() ;
+                }
+            }
+        },
+        toggleNotesOnButtons: function(which,value){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[button]');
+            for (var i = 0; i < nodeList.length; i++) {
+                if(which==='playback'){
+                    nodeList[i].showingPlaybackNotes = value ;
+                }
+                else{
+                    nodeList[i].showingInstrumentNotes = value ;
+                }
+            }
+        },
+        _computeRotation: function(rotation){
+            if( rotation )
+                return "reversedHorizontal" ;
+            return "horizontal" ;
+        },
+        _computeColRotation: function(rotation){
+            if( rotation )
+                return "reversedVertical" ;
+            return "vertical" ;
+        },
+        setOpacity: function(which,opacity){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[button]');
+            for (var i = 0; i < nodeList.length; i++) {
+                if (which==='playback')
+                    nodeList[i].playbackOpacity = opacity ;
+                if (which ==='instrument')
+                    nodeList[i].instrumentOpacity = opacity ;
+            }
+        },
+        resetGUI: function(origin,clearState){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[button]');
+            for ( i = 0; i < nodeList.length; i++) {
+                nodeList[i].resetGUI(origin,clearState);
+            }
+            while(this.playbackButtonActions.length > 0) {
+                var when ;
+                if(this.playbackButtonActions.first.value.playNow !== undefined) {
+                    when = context.currentTime ;
+                }
+                else{
+                    when =  context.currentTime+(this.playbackButtonActions.first.value.tempo)*(this.playbackButtonActions.first.value.time-this.playbackButtonActions.first.value.playbackTime)  ;
+                }
+                if(when < context.currentTime || this.playbackButtonActions.first.value.playNow !== undefined){
+                    this.$$('['+this.playbackButtonActions.first.value.which+']').render(this.playbackButtonActions.first.value.origin,this.playbackButtonActions.first.value.buttonState) ;
+                    this.playbackButtonActions.popFirst() ;
+                }
+                else{
+                    break ;
+                }
+            }
+            this.playbackButtonActions.clear() ;
+            this.instrumentButtonActions.clear() ;
+        },
+        // ----------------- SYNTHESIZER  --------------------------
+        stopAudio: function(origin){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('VIEW-AUDIO');
+            var i ;
+            for ( i = 0; i < nodeList.length; i++)
+                nodeList[i].stop(origin) ;
+        },
+        setVelocity: function(velocity){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('VIEW-AUDIO');
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].setVelocity(velocity) ;
+            }
+        },
+        _setSynthInstrumentPanning: function(panning){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('VIEW-AUDIO');
+            if(nodeList[0].totalNotes === undefined)
+                return ;
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].setInstrumentPanning(panning) ;
+            }
+        },
+        _setSynthPlaybackPanning: function(panning){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('VIEW-AUDIO');
+            if(nodeList[0].totalNotes === undefined)
+                return ;
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].setPlaybackPanning(panning) ;
+            }
+        },
+        _setSynthPlaybackVolume: function(volume){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('VIEW-AUDIO');
+            if(nodeList[0].totalNotes === undefined)
+                return ;
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].setPlaybackGain(volume) ;
+            }
+        },
+        _setSynthInstrumentVolume: function(volume){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('VIEW-AUDIO');
+            if(nodeList[0].totalNotes === undefined)
+                return ;
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].setInstrumentGain(volume) ;
+            }
+        },
+
+        ready: function () {
+            this.playbackButtonActions = new LinkedList()  ;
+            this.instrumentButtonActions = new LinkedList() ;
+            this.totalViewAudios = Polymer.dom(this.root).querySelectorAll('VIEW-AUDIO').length;
+            this.loadedViewAudios = 0 ;
+            this.listen(this,'synthesizer-load','_onLoadSynthesizer') ;
+            setInterval(this.updateGUI.bind(this),5) ;
+        }
+    } ;
+</script>

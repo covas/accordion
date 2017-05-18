@@ -1,0 +1,63 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../neon-animation/neon-shared-element-animation-behavior.html">
+<link rel="import" href="../neon-animation/neon-animation-runner-behavior.html">
+<link rel="import" href="../neon-animation/neon-animations.html">
+
+<script>
+
+/**
+* Behavior that highlights stuff.
+*
+* @polymerBehavior
+*/
+
+    HeroToBehaviorImpl = {
+        properties: {
+            hero: {
+                notify: true
+            },
+            animationConfig: {
+                value: function () {
+                    return {
+                        'entry': [
+                            {
+                                name: 'hero-animation',
+                                toPage: this,
+                                id: 'hero'
+                            }, {
+                                name: 'fade-in-animation',
+                                node: this.$.to
+                            }
+                        ],
+                        'exit': [
+                            {
+                                name: 'hero-animation',
+                                fromPage: this,
+                                id: 'hero'
+                            }, {
+                                name: 'fade-out-animation',
+                                node: this.$.ripple,
+                                timing: {
+                                    duration: 400
+                                }
+                            }, {
+                                name: 'fade-out-animation',
+                                node: this,
+                                timing: {
+                                    duration: 200
+                                }
+                            }
+                        ]
+                    };
+                }
+            },
+            sharedElements: {
+                value: function () {
+                    return {'hero': this.$.to};
+                }
+            }
+        }
+    };
+    HeroToBehaviorTmp = [Polymer.NeonSharedElementAnimatableBehavior, HeroToBehaviorImpl];
+    HeroToBehavior = [Polymer.NeonAnimationRunnerBehavior, HeroToBehaviorImpl];
+</script>

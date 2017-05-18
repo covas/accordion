@@ -1,0 +1,71 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<script>
+/**
+* Behavior that highlights stuff.
+*
+* @polymerBehavior
+*/
+    ACButtonBehavior= {
+        properties:{
+            insrumentOpacity:{
+                type:Number,
+                value:1
+            },
+            showingInstrumentNotes:{
+                type:Boolean,
+                value:false
+            },
+            instrumentState: {
+                type: Number,
+                value:0
+            },
+            playbackOpacity:{
+                type:Number,
+                value:1
+            },
+            showingPlaybackNotes:{
+                type:Boolean,
+                value:false
+            },
+            playbackState: {
+                type: Number,
+                value:0
+            }
+        },
+        _getNoteName: function(note){
+            var notes = [
+                'C',
+                'C#',
+                'D',
+                'Eb',
+                'E',
+                'F',
+                'F#',
+                'G',
+                'Ab',
+                'A',
+                'Bb',
+                'B'
+            ];
+            var octave = Math.floor(note / 12);
+            var name = notes[note % 12];
+            name += octave;
+            return name;
+        },
+        render: function(origin,buttonState){
+            if(origin === 'playback' || origin === 'playbackGUI' && this.playbackState !== buttonState){
+                this.playbackState = buttonState ;
+            }
+            if(origin === 'instrument' && this.instrumentState !== buttonState)
+                this.instrumentState = buttonState ;
+        },
+        resetGUI: function(origin,clearState){
+            if(origin==='playback' && clearState ) {
+                this.playbackState = 0 ;
+            }
+            if(origin==='instrument' && clearState)
+                this.instrumentState = 0 ;
+        }
+    } ;
+</script>

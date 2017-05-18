@@ -1,0 +1,236 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<script>
+// 'use strict';
+    var context, convolver, dry, wet, compressor, masterGain;
+    var playing = false ;
+    var acE ;
+    function initAudioContext() {
+        context = null;
+        convolver = null;
+        dry = null;
+        wet = null;
+        compressor = null;
+        masterGain = null;
+
+        context = new AudioContext();
+        convolver = context.createConvolver();
+        dry = context.createGain();
+        wet = context.createGain();
+        masterGain = context.createGain();
+        compressor = context.createDynamicsCompressor();
+
+        compressor.threshold.value = 0;
+        compressor.knee.value = 0;
+        compressor.ratio.value = 20;
+        compressor.attack.value = 0.005;
+        compressor.release.value = 0.05;
+
+        var synthReverb = 40;
+        wet.gain.value = (1.0 - ((100 - synthReverb) / 100));
+        dry.gain.value = (100 - synthReverb) / 100;
+
+        compressor.threshold.value = 0;
+        compressor.connect(convolver);
+        compressor.connect(dry);
+        convolver.connect(wet);
+        dry.connect(masterGain);
+        wet.connect(masterGain);
+        masterGain.connect(context.destination);
+    }
+    initAudioContext();
+
+    function stopAudio() {
+        return new Promise(function(resolve, reject) {
+            masterGain.gain.cancelScheduledValues(context.currentTime);
+            masterGain.gain.setValueAtTime(masterGain.gain.value, context.currentTime);
+            masterGain.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 0.1);
+            setTimeout(function() {
+                resolve();
+            }, 100);
+        });
+    }
+/**
+* Behavior that highlights stuff.
+*
+* @polymerBehavior
+*/
+    ACViewBehavior= {
+        listeners:{
+            'action': 'action',
+            'instrument-buttons-loaded':'_onInstrumentButtonsLoaded',
+            'instrument-buttons-loaded-2':'_onInstrumentButtonsLoaded'
+        },
+        properties:{
+            registeredInstrumentButtons:{
+                type:Boolean,
+                value:false
+            },
+            totalInstrumentButtons:{
+                type:Number,
+                value:0
+            },
+            loadedInstrumentButtons:{
+                type:Number,
+                value:0
+            },
+            finishedLoading:{
+                type:Boolean,
+                value:false
+            },
+            rotation: {
+                type: Boolean,
+                value: false
+            },
+            recording: {
+                type: Boolean,
+                value: false
+            }
+        },
+
+        // ------------- instrument loading ---------------------
+        _onInstrumentButtonsLoaded: function(){
+            this.loadedInstrumentButtons ++ ;
+            if(this.loadedInstrumentButtons === this.totalInstrumentButtons) {
+                this.fire('instrument-loaded') ;
+                this.finishedLoading = true ;
+                this._onFinishedLoadingNotes() ;
+                if(!this.registeredInstrumentButtons){
+                    this.registeredInstrumentButtons = true ;
+                    var nodeList = Polymer.dom(this.root).querySelectorAll('[buttons]');
+                    for (var i = 0; i < nodeList.length; i++) {
+                        nodeList[i].registerInstrumentButtons() ;
+                        nodeList[i].registerViewAudios() ;
+                    }
+                }
+            }
+        },
+        loadIntrumentAudio: function(e){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[buttons]');
+            nodeList[e.buttonsGroupIndex].resetAudio(e) ;
+            this.addPitch(0) ;
+        },
+        // ------------- midi ---------------------
+        action: function (e) {
+            if(!this.finishedLoading)
+                return  ;
+            if (e.cmd==='velocity-change') {
+                this._setVelocity (e.velocity) ;
+            }
+            this._instrumentAction(e) ;
+        },
+        _setVelocity: function(velocity){
+            noteNotFound = false ;
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[buttons]');
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].setVelocity(velocity/127) ;
+            }
+        },
+        // ------------- playback controls --------------
+        pause: function () {
+            this.resetGUI('playback', false ) ;
+            stopAudio().then(function(){
+                context.close() ;
+                initAudioContext() ;
+                this._stopAudio('playback') ;
+            }.bind(this)) ;
+        },
+        stop: function (e) {
+            this.resetGUI('playback', e.clearState ) ;
+            stopAudio().then(function(){
+                context.close() ;
+                initAudioContext() ;
+                this._stopAudio('playback') ;
+            }.bind(this)) ;
+        },
+        _stopAudio: function(origin){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[buttons]');
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].stopAudio(origin) ;
+            }
+        },
+        resetGUI: function(e){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[buttons]');
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].resetGUI(e.origin,e.clearState) ;
+            }
+        },
+        clearPlaybackGUI: function(){
+            this.resetGUI({origin:'playback',clearState:true}) ;
+        },
+        // ------------- settings controls --------------
+        settingsUpdate: function(e){
+            var target = e.target , value = e.value ;
+            var arr = target.split('_') ;
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[buttons]');
+            console.log(target,value);
+            if (arr.length ===3) {
+                if(arr[0] === 'playback') {
+                    if(arr[1] === 'volume')
+                    nodeList[arr[2]].playbackVolume = value/100 ;
+                    if(arr[1] === 'panning') {
+                        nodeList[arr[2]].playbackPanning = value/100 ;
+                    }
+                }
+                if(arr[0] === 'instrument'){
+                    if(arr[1] === 'volume')
+                    nodeList[arr[2]].instrumentVolume = value/100 ;
+                    if(arr[1] == 'panning')
+                    nodeList[arr[2]].instrumentPanning = value/100 ;
+                }
+            }
+            else if (arr.length === 2){
+                if(arr[1] === 'opacity')
+                this.setOpacity(arr[0],value) ;
+            }
+            else{
+                if(arr[0] === 'reverbSlider'){
+                    this.setReverb(value) ;
+                }
+            }
+        },
+        addPitch: function (diff) {
+            this.loadedInstrumentButtons = 0 ;
+            this.finishedLoading = false ;
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[buttons]');
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].addPitch(diff) ;
+            }
+        },
+        toggleNotes: function (which,value) {
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[buttons]');
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].toggleNotesOnButtons(which,value) ;
+            }
+        },
+        setOpacity: function(which,opacity){
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[buttons]');
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].setOpacity(which,opacity/100) ;
+            }
+        },
+        setReverb: function(value){
+            synthReverb = value ;
+            wet.gain.value = ( 1.0 - ((100-synthReverb)/100) );
+            dry.gain.value = (100-synthReverb)/100;
+        },
+        setRotation: function (e) {
+            this.rotation = e.rotation ;
+            var nodeList = Polymer.dom(this.root).querySelectorAll('[buttons]');
+            for (var i = 0; i < nodeList.length; i++) {
+                nodeList[i].rotation = e.rotation ;
+            }
+        },
+        testFunction: function(message){
+            console.log(message);
+        },
+        ready: function () {
+            this.loadedInstrumentButtons = 0 ;
+            this.totalInstrumentButtons = Polymer.dom(this.root).querySelectorAll('[buttons]').length;
+            this.addPitch(0) ;
+            window.onmessage = function(args){
+                this[args.data[0]](args.data[1]) ;
+            }.bind(this);
+        }
+    } ;
+</script>

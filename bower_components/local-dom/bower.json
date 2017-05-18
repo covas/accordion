@@ -1,0 +1,29 @@
+{
+  "name": "local-dom",
+  "authors": [
+    "acordeonl <admin@acorde.onl>"
+  ],
+  "description": "",
+  "main": "local-dom.html",
+  "keywords": [
+    "web-components",
+    "polymer"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "iron-media-query": "PolymerElements/iron-media-query#^1.0.8"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.1.7",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.2.5"
+  }
+}

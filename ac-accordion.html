@@ -1,0 +1,291 @@
+<imports >
+    <link rel="import" href="/bower_components/polymer/polymer.html">
+    <link rel="import" href="/bower_components/ac-view-behaviors/ac-view-behavior.html">
+    <link rel="import" href="/bower_components/animation-behaviors/scale-up-behavior.html">
+
+
+    <link rel="import" href="/bower_components/iron-flex-layout/iron-flex-layout.html">
+    <link rel="import" href="/bower_components/local-dom/local-dom.html">
+    <link rel="import" href="./accordion-treble.html">
+    <link rel="import" href="./accordion-bass.html">
+</imports>
+<dom-module id="ac-accordion">
+    <template>
+        <style loader>
+            .spinner {
+                width: 40px;
+                height: 40px;
+                position: relative;
+                margin: 200px auto;
+            }
+            .double-bounce1,
+            .double-bounce2 {
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                background-color: #333;
+                opacity: 0.2;
+                position: absolute;
+                top: 0;
+                left: 0;
+                -webkit-animation: sk-bounce 2.0s infinite ease-in-out;
+                animation: sk-bounce 2.0s infinite ease-in-out;
+            }
+            .double-bounce2 {
+                -webkit-animation-delay: -1.0s;
+                animation-delay: -1.0s;
+            }
+            @-webkit-keyframes sk-bounce {
+                0%,
+                100% {
+                    -webkit-transform: scale(0.0);
+                }
+                50% {
+                    -webkit-transform: scale(1.0);
+                }
+            }
+            @keyframes sk-bounce {
+                0%,
+                100% {
+                    transform: scale(0.0);
+                    -webkit-transform: scale(0.0);
+                }
+                50% {
+                    transform: scale(1.0);
+                    -webkit-transform: scale(1.0);
+                }
+            }
+            [spinner] {
+                height: 80%;
+                width: 100%;
+                @apply(--layout-horizontal);
+                @apply(--layout-center-justified);
+                @apply(--layout-center);
+                font-size: 25px ;
+                color:gray ;
+                margin-bottom: 120px ;
+            }
+        </style>
+        <style>
+            local-dom{
+                height:100vh;
+                width:100vw;
+                @apply(--layout-horizontal);
+                @apply(--layout-around-justified);
+            }
+            [wrapper] {
+                width: 80vw;
+                @apply(--layout-horizontal);
+                @apply(--layout-around-justified);
+            }
+            .reversed {
+                @apply(--layout-horizontal-reverse);
+            }
+            .horizontal {
+                @apply(--layout-horizontal);
+            }
+            .withDisplay {
+                display: flex;
+            }
+            .noDisplay {
+                display: none;
+            }
+        </style>
+        <local-dom mobile="{{mobile}}" tablet="{{tablet}}" laptop="{{laptop}}">
+            <div wrapper>
+                <template is="dom-if" if="[[!finishedLoading]]">
+                    <div spinner>
+                        Cargando ...
+                    </div>
+                </template>
+                <accordion-treble buttons id='treble' class$='{{_computeDisplayTreble(mobile,showingTreble)}} {{_computeDisplay(finishedLoading)}}'  name='diapasón' instrument-panning='0.4' playback-panning='0.2' instrument-volume='1' playback-volume='0.7'></accordion-treble>
+                <accordion-bass buttons id='bass' class$='{{_computeDisplayBass(mobile,showingTreble)}} {{_computeDisplay(finishedLoading)}}'  name='bajos' playback-panning='-0.2' instrument-panning='-0.4' instrument-volume='0.45' playback-volume='0.25'></accordion-bass>
+            </div>
+        </local-dom>
+    </template>
+    <script>
+        Polymer({
+            is: "ac-accordion",
+            observers: [],
+            behaviors: [
+                ACViewBehavior, ScaleUpBehavior
+            ],
+            listeners: {
+                'keypress': '_keyPress',
+                'keyup': '_keyUp'
+                // 'mousemove': '_updateOpening'
+            },
+            properties: {
+                opening: {
+                    type: Boolean,
+                    value: false
+                },
+                showingTreble: {
+                    type: Boolean,
+                    value: true
+                },
+                bassNotes: {
+                    type: Number,
+                    value: 0
+                }
+            },
+            _onFinishedLoadingNotes: function () {
+                this.playAnimation('entry') ;
+            },
+            // ------   -- keyboard mouse activity -------------
+            _updateOpening: function (e) {
+                if (e.movementX > 0)
+                    this.opening = true;
+                if (e.movementX < 0) {
+                    this.opening = false;
+                }
+            },
+            _keyPress: function (e) {
+                this._keyAction(e.key, "note-on");
+            },
+            _keyUp: function (e) {
+                this._keyAction(e.key, "note-off");
+            },
+            _keyAction: function (key, cmd) {
+                var note = keyMap[key];
+                if (note === undefined)
+                    return;
+                if (this.opening)
+                    note++;
+                this.fire('action', {
+                    channel: 0,
+                    midiNote: note,
+                    cmd: cmd,
+                    time: context.currentTime,
+                    origin: 'instrument'
+                });
+            },
+            // ------------- accordion activity -------------
+            _chordActivity: function (cmd) {
+                var st = this.bassNotes;
+                var button = -1;
+                //based on G accrdion with notes on bass: 41,43,45,46,48,49,50,51,52,53,54,55,56,57,58,59  bits represent: 41,42,43,44,45,46,47,48,49,50,51,52,53,54,  55,56,57,58,59   this.$.trebleSynthesizer.allNotesOffChords(); s0 closed
+                if (true) {
+                    if ((st & (1 << 7)) && (st & (1 << 11)) && (st & (1 << 14)))
+                        button = 0;
+
+                    //s0 opened
+                    if ((st & (1 << 7)) && (st & (1 << 10)) && (st & (1 << 14)))
+                        button = 1;
+
+                    //s1 closed
+                    if ((st & (1 << 8)) && (st & (1 << 12)) && (st & (1 << 15)))
+                        button = 2;
+
+                    //s1 opened
+                    if ((st & (1 << 8)) && (st & (1 << 11)) && (st & (1 << 15)))
+                        button = 3;
+
+                    //s2 closed
+                    if ((st & (1 << 9)) && (st & (1 << 13)) && (st & (1 << 16)))
+                        button = 4;
+
+                    //s2 opened
+                    if ((st & (1 << 9)) && (st & (1 << 12)) && (st & (1 << 16)))
+                        button = 5;
+
+                    //s3 closed
+                    if ((st & (1 << 10)) && (st & (1 << 14)) && (st & (1 << 17)))
+                        button = 6;
+
+                    //s3 opened
+                    if ((st & (1 << 10)) && (st & (1 << 13)) && (st & (1 << 17)))
+                        button = 7;
+
+                    //s4 closed
+                    if ((st & (1 << 11)) && (st & (1 << 15)) && (st & (1 << 18)))
+                        button = 8;
+
+                    //s4 opened
+                    if ((st & (1 << 11)) && (st & (1 << 14)) && (st & (1 << 18)))
+                        button = 9;
+
+                    //s5 closed
+                    if ((st & (1 << 0)) && (st & (1 << 16)) && (st & (1 << 7)))
+                        button = 10;
+
+                    //s5 opened
+                    if ((st & (1 << 0)) && (st & (1 << 15)) && (st & (1 << 7)))
+                        button = 11;
+                    }
+                if (button === -1)
+                    return;
+                var e = {};
+                e.detail = {};
+                e.detail.time = context.currentTime;
+                e.detail.midiNote = button;
+                e.detail.channel = 3;
+                e.detail.origin = 'instrument';
+                e.detail.cmd = cmd;
+                this.$$('ACCORDION-BASS').addButtonAction(e);
+            },
+            _instrumentAction: function (e) {
+                var channel, midiNote, cmd ;
+                channel = e.channel ;
+                button = e.button ;
+                cmd = e.cmd ;
+                if (channel === 0)
+                    this.$$('ACCORDION-TREBLE').addButtonAction(e);
+                else if (channel === 1 || channel === 3)
+                    this.$$('ACCORDION-BASS').addButtonAction(e);
+                else if (channel === 2) {
+                    var cnt = (this._bitCount(this.bassNotes) % 3);
+                    if (cnt === 0)
+                        this._chordActivity('note-off');
+                    var bNote = button - 41;
+                    if (cmd === 'note-on')
+                        this.bassNotes = this.bassNotes | (1 << bNote);
+                    else {
+                        var tmp = 524287 ^ (1 << bNote);
+                        this.bassNotes = this.bassNotes & tmp;
+                    }
+                    cnt = (this._bitCount(this.bassNotes) % 3);
+                    if (cnt === 0)
+                        this._chordActivity('note-on');
+                }
+            },
+            _bitCount: function (num) {
+                var cnt = 0;
+                for (var i = 0; i < 31; i++) {
+                    if (num & (1 << i))
+                        cnt++;
+                    }
+                return cnt;
+            },
+            // ------------- general controls ---------------
+            swap: function () {
+                this.showingTreble = !this.showingTreble;
+                this.playAnimation('entry');
+            },
+            _computeDisplay: function (flag) {
+                if (flag)
+                    return 'withDisplay';
+                return 'noDisplay';
+            },
+            _computeDisplayTreble: function (mobile, flag) {
+                if (!mobile)
+                    return 'withDisplay';
+                if (flag)
+                    return 'withDisplay';
+                return 'noDisplay';
+            },
+            _computeDisplayBass: function (mobile, flag) {
+                if (!mobile)
+                    return 'withDisplay';
+                if (!flag)
+                    return 'withDisplay';
+                return 'noDisplay';
+            },
+            _computeRotation: function (rotation) {
+                if (rotation)
+                    return "reversed";
+                return "horizontal";
+            }
+        });
+    </script>
+</dom-module>
